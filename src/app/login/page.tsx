@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,8 +15,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const authError = searchParams.get("error");
+    if (authError === "Configuration") {
+      setError(
+        "Server auth is not configured. Set NEXTAUTH_SECRET and NEXTAUTH_URL in Vercel Environment Variables, then redeploy."
+      );
+    }
+  }, [searchParams]);
 
   const {
     register,
@@ -35,7 +45,11 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Invalid email or password");
+      setError(
+        result.error === "Configuration"
+          ? "Server auth is not configured. Set NEXTAUTH_SECRET and NEXTAUTH_URL in Vercel Environment Variables, then redeploy."
+          : "Invalid email or password"
+      );
       setLoading(false);
       return;
     }
