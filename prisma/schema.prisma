@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SALESMAN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DUE_TOMORROW
+  TASK_OVERDUE
+  TASK_COMPLETED
+}
+
+model User {
+  id               String     @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  email            String     @unique
+  password         String
+  phone            String?
+  role             Role
+  status           UserStatus @default(ACTIVE)
+  managerId        String?    @db.ObjectId
+  manager          User?      @relation("ManagerSalesmen", fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  salesmen         User[]     @relation("ManagerSalesmen")
+  assignedTasks    Task[]     @relation("AssignedTo")
+  createdTasks     Task[]     @relation("AssignedBy")
+  notifications    Notification[]
+  activityLogs     ActivityLog[]
+  taskComments     TaskComment[]
+  resetToken       String?
+  resetTokenExpiry String?
+  createdAt        String
+  updatedAt        String
+}
+
+model Task {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  taskId         String       @unique
+  title          String
+  description    String?
+  priority       TaskPriority @default(MEDIUM)
+  category       String?
+  status         TaskStatus   @default(PENDING)
+  assignedById   String       @db.ObjectId
+  assignedBy     User         @relation("AssignedBy", fields: [assignedById], references: [id])
+  assignedToId   String       @db.ObjectId
+  assignedTo     User         @relation("AssignedTo", fields: [assignedToId], references: [id])
+  startDate      String
+  dueDate        String
+  estimatedHours Float?
+  completionDate String?
+  remarks        String?
+  isOverdue      Boolean      @default(false)
+  createdAt      String
+  updatedAt      String
+  comments       TaskComment[]
+  attachments    TaskAttachment[]
+}
+
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String           @db.ObjectId
+  user      User             @relation(fields: [userId], references: [id])
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt String
+}
+
+model ActivityLog {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String  @db.ObjectId
+  user      User    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt String
+}
+
+model TaskComment {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  taskId    String @db.ObjectId
+  task      Task   @relation(fields: [taskId], references: [id])
+  userId    String @db.ObjectId
+  user      User   @relation(fields: [userId], references: [id])
+  content   String
+  createdAt String
+}
+
+model TaskAttachment {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  taskId       String @db.ObjectId
+  task         Task   @relation(fields: [taskId], references: [id])
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  uploadedById String @db.ObjectId
+  createdAt    String
+}
+
+model PasswordReset {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  token     String @unique
+  expiresAt String
+  createdAt String
+}
