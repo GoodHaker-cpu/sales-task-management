@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,18 +15,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const authError = searchParams.get("error");
+    const authError = new URLSearchParams(window.location.search).get("error");
     if (authError === "Configuration") {
       setError(
         "Server auth is not configured. Set NEXTAUTH_SECRET and NEXTAUTH_URL in Vercel Environment Variables, then redeploy."
       );
     }
-  }, [searchParams]);
+  }, []);
 
   const {
     register,
